@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 const MAJOR: &str = "0";
 const MINOR: &str = "1";
@@ -32,52 +32,60 @@ enum BalancesCommands {
     List {},
 }
 
+#[derive(Args, Debug)]
+struct Transaction {
+    /// From what account to send tokens
+    #[clap(long)]
+    from: String,
+
+    /// To what account to send tokens
+    #[clap(long)]
+    to: String,
+
+    /// How many tokens to send
+    #[clap(long)]
+    value: u64,
+
+    /// Possible values: 'reward'
+    #[clap(long)]
+    #[clap(default_value_t = String::from(""))]
+    data: String,
+}
+
 #[derive(Subcommand, Debug)]
 enum TxCommands {
     /// Adds new TX to database
-    Add {
-        /// From what account to send tokens
-        #[clap(long)]
-        from: String,
+    Add(Transaction),
+}
 
-        /// To what account to send tokens
-        #[clap(long)]
-        to: String,
+fn print_version() {
+    println!("Version: {}.{}.{}-beta {}", MAJOR, MINOR, FIX, VERBAL);
+}
 
-        /// How many tokens to send
-        #[clap(long)]
-        value: u64,
+fn list_balances() {
+    println!("LIST BALANCES");
+}
 
-        /// Possible values: 'reward'
-        #[clap(long)]
-        #[clap(default_value_t = String::from(""))]
-        data: String,
-    },
+fn add_transaction(tx: &Transaction) {
+    println!("ADD: {:?}", tx);
+}
+
+fn parse(commands: &Option<Commands>) {
+    match commands {
+        Some(Commands::Version {}) => print_version(),
+        Some(Commands::Balances(balances)) => match balances {
+            BalancesCommands::List {} => list_balances(),
+        },
+        Some(Commands::Tx(tx)) => match tx {
+            TxCommands::Add(tx) => add_transaction(tx),
+        },
+        None => {}
+    }
 }
 
 fn main() {
     let cli = Cli::parse();
-    match &cli.command {
-        Some(Commands::Version {}) => {
-            println!("Version: {}.{}.{}-beta {}", MAJOR, MINOR, FIX, VERBAL);
-        }
-        Some(Commands::Balances(balances)) => match balances {
-            BalancesCommands::List {} => {
-                println!("LIST");
-            }
-        },
-        Some(Commands::Tx(tx)) => match tx {
-            TxCommands::Add {
-                from: _,
-                to: _,
-                value: _,
-                data: _,
-            } => {
-                println!("ADD: {:?}", tx);
-            }
-        },
-        None => {}
-    }
+    parse(&cli.command)
 }
 
 #[test]
